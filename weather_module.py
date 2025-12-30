@@ -1,18 +1,15 @@
 import requests
+import pandas as pd
 import os
 from dotenv import load_dotenv
+from typing import Any
 
 load_dotenv()
 OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 
-def fetch(url: str) -> str:
+def fetch(url: str) -> dict[str, Any]:
     """
     Makes a GET request to given URL
-    
-    :param url: URL to request
-    :type url: str
-    :return: HTTP response as a string
-    :rtype: str
     """
     response = requests.get(
         url,
@@ -20,45 +17,36 @@ def fetch(url: str) -> str:
         timeout=10
     )
     response.raise_for_status()
-    return response.text
+    return response.json()
 
-def fetch_weather(lat: float, lon: float) -> str:
+def fetch_weather(lat: float, lon: float) -> pd.DataFrame:
     """
-    Requests data from OpenWeather API
-    
-    :param lat: Location latitude
-    :type lat: float
-    :param lon: Location longitude
-    :type lon: float
-    :return: OpenWeather API response as a string
-    :rtype: str
+    Requests current weather data from OpenWeather API
     """
     
     EXCLUDED = ",".join([
         'minutely',
+        'hourly',
         'daily',
         'alerts',
     ])
 
     openweather_url = (
         "https://api.openweathermap.org/data/3.0/onecall?"
-        f"lat={lat}&lon={lon}"
-        f"&exclude={EXCLUDED}"
+        f"lat={lat}&lon={lon}&exclude={EXCLUDED}"
         f"&appid={OPENWEATHER_API_KEY}"
     )
 
-    return fetch(openweather_url)
+    json = fetch(openweather_url)
+    normalized_json = pd.json_normalize(json)
+    df = pd.DataFrame(normalized_json)
+    # Unpack weather column dict
+    df = df.assign(**df['current.weather'].iloc[0][0]).drop('current.weather', axis=1)
+    return df
 
-def fetch_air_quality(lat: float, lon: float) -> str:
+def fetch_air_quality(lat: float, lon: float) -> dict[str, Any]:
     """
     Requests air quality data from Open-Meteo
-    
-    :param lat: Location latitude
-    :type lat: float
-    :param lon: Location longitude
-    :type lon: float
-    :return: Open-Meteo API response as a string
-    :rtype: str
     """
 
     CURRENT_PARAMS = ",".join([
@@ -79,16 +67,9 @@ def fetch_air_quality(lat: float, lon: float) -> str:
 
     return fetch(open_meteo_url)
 
-def fetch_alerts(lat: float, lon: float) -> str:
+def fetch_alerts(lat: float, lon: float) -> dict[str, Any]:
     """
     Requests weather alters from NOAA
-    
-    :param lat: Location latitude
-    :type lat: float
-    :param lon: Location longitude
-    :type lon: float
-    :return: NOAA API results as a string
-    :rtype: str
     """
 
     URGENCY = ",".join([
@@ -120,20 +101,6 @@ def fetch_alerts(lat: float, lon: float) -> str:
     
     return fetch(NOAA_URL)
 
-def write_to_log(text: str) -> None:
-    """
-    Appends to text file log.txt, creates if it doesn't exist
-    
-    :param text: Text to append to log.txt
-    :type text: str
-    """
-
-    with open("log.txt", "a", encoding="utf-8") as f:
-        f.write(f"{text}\n")
-
 if __name__ == "__main__":
-    # Testing
-    virginia_beach = (36.78, -76.02)
-    write_to_log(fetch_air_quality(*virginia_beach))
-    write_to_log(fetch_weather(*virginia_beach))
-    write_to_log(fetch_alerts(*virginia_beach))
+    virginia_beach = (36.78,-76.02)
+    df = fetch_weather(*virginia_beach)
