@@ -44,7 +44,7 @@ def fetch_weather(lat: float, lon: float) -> pd.DataFrame:
     df = df.assign(**df['current.weather'].iloc[0][0]).drop('current.weather', axis=1)
     return df
 
-def fetch_air_quality(lat: float, lon: float) -> dict[str, Any]:
+def fetch_air_quality(cities: str='cities.csv') -> pd.DataFrame:
     """
     Requests air quality data from Open-Meteo
     """
@@ -61,11 +61,21 @@ def fetch_air_quality(lat: float, lon: float) -> dict[str, Any]:
 
     open_meteo_url = (
         "https://air-quality-api.open-meteo.com/v1/air-quality?"
-        f"latitude={lat}&longitude={lon}"
-        f"&current={CURRENT_PARAMS}&timeformat=unixtime"
+        f"&current={CURRENT_PARAMS}&timezone=America/New_York&timeformat=unixtime"
     )
 
-    return fetch(open_meteo_url)
+    cities_df = pd.read_csv(cities)
+    lat = []
+    lon = []
+    for row in cities_df.itertuples(index=False):
+        lat.append(str(row[1]))
+        lon.append(str(row[2]))
+    open_meteo_url += f"&latitude={','.join(lat)}&longitude={','.join(lon)}"
+
+    json = fetch(open_meteo_url)
+    normalized_json = pd.json_normalize(json)
+    df = pd.DataFrame(normalized_json)
+    return df
 
 def fetch_alerts(lat: float, lon: float) -> dict[str, Any]:
     """
@@ -102,5 +112,4 @@ def fetch_alerts(lat: float, lon: float) -> dict[str, Any]:
     return fetch(NOAA_URL)
 
 if __name__ == "__main__":
-    virginia_beach = (36.78,-76.02)
-    df = fetch_weather(*virginia_beach)
+    df = fetch_air_quality()
