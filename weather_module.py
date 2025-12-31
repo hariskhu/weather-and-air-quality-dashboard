@@ -38,10 +38,9 @@ def fetch_weather(lat: float, lon: float) -> pd.DataFrame:
     )
 
     json = fetch(openweather_url)
-    normalized_json = pd.json_normalize(json)
-    df = pd.DataFrame(normalized_json)
+    df = pd.json_normalize(json)
     # Unpack weather column dict
-    df = df.assign(**df['current.weather'].iloc[0][0]).drop('current.weather', axis=1)
+    df = df.assign(**df['current.weather'][0][0]).drop('current.weather', axis=1)
     return df
 
 def fetch_all_weather(cities_filepath: str='cities.csv'):
@@ -96,7 +95,7 @@ def fetch_all_air_quality(cities_filepath: str='cities.csv') -> pd.DataFrame:
 
 def fetch_alerts(lat: float, lon: float) -> pd.DataFrame:
     """
-    Requests weather alters from NOAA
+    Requests weather alerts from NOAA
     """
 
     URGENCY = ",".join([
@@ -127,9 +126,36 @@ def fetch_alerts(lat: float, lon: float) -> pd.DataFrame:
     )
     
     json = fetch(NOAA_URL)
-    normalized_json = pd.json_normalize(json)
-    return pd.DataFrame(normalized_json)
+    df = pd.json_normalize(
+        json["features"],
+        record_path=None,
+        meta=["id"],
+        sep="_"
+    )
+
+    # pull properties up
+    props = pd.json_normalize(
+        [f["properties"] for f in json["features"]],
+        sep="_"
+    )
+    print(df.columns, df)
+     # df = pd.concat([df.drop(columns=["properties"]), props], axis=1)
+    return df
+
+def fetch_all_alerts(cities_filepath: str='cities.csv'):
+    """
+    Requests all currently active alerts from cities
+    """
+
+    alert_list = []
+    cities_df = pd.read_csv(cities_filepath)
+    for row in cities_df.itertuples(index=False):
+        lat, lon = row[1], row[2]
+        alert_list.append(fetch_alerts(lat, lon))
+    
+    return pd.concat(alert_list)
 
 if __name__ == "__main__":
-    virginia_beach = (36.8, -76.0)
-    df = fetch_alerts(*virginia_beach)
+    roanoke = (37.3, -80.0)
+    df = fetch_all_alerts()
+    # df = fetch_alerts(*roanoke)
