@@ -94,7 +94,7 @@ def fetch_all_air_quality(cities_filepath: str='cities.csv') -> pd.DataFrame:
     df = pd.DataFrame(normalized_json)
     return df
 
-def fetch_alerts(lat: float, lon: float) -> dict[str, Any]:
+def fetch_alerts(lat: float, lon: float) -> pd.DataFrame:
     """
     Requests weather alters from NOAA
     """
@@ -126,8 +126,10 @@ def fetch_alerts(lat: float, lon: float) -> dict[str, Any]:
         f"&urgency={URGENCY}&severity={SEVERITY}&certainty={CERTAINTY}"
     )
     
-    return fetch(NOAA_URL)
+    json = fetch(NOAA_URL)
+    normalized_json = pd.json_normalize(json)
+    return pd.DataFrame(normalized_json)
 
 if __name__ == "__main__":
-    # fetch_all_weather()
-    print(fetch_all_weather())
+    virginia_beach = (36.8, -76.0)
+    df = fetch_alerts(*virginia_beach)
