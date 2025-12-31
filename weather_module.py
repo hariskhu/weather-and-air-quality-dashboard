@@ -44,9 +44,22 @@ def fetch_weather(lat: float, lon: float) -> pd.DataFrame:
     df = df.assign(**df['current.weather'].iloc[0][0]).drop('current.weather', axis=1)
     return df
 
-def fetch_air_quality(cities: str='cities.csv') -> pd.DataFrame:
+def fetch_all_weather(cities_filepath: str='cities.csv'):
     """
-    Requests air quality data from Open-Meteo
+    Requests all current weather data from cities
+    """
+
+    weather_list = []
+    cities_df = pd.read_csv(cities_filepath)
+    for row in cities_df.itertuples(index=False):
+        lat, lon = row[1], row[2]
+        weather_list.append(fetch_weather(lat, lon))
+    
+    return pd.concat(weather_list)
+
+def fetch_all_air_quality(cities_filepath: str='cities.csv') -> pd.DataFrame:
+    """
+    Requests air quality for all cities from Open-Meteo
     """
 
     CURRENT_PARAMS = ",".join([
@@ -64,13 +77,17 @@ def fetch_air_quality(cities: str='cities.csv') -> pd.DataFrame:
         f"&current={CURRENT_PARAMS}&timezone=America/New_York&timeformat=unixtime"
     )
 
-    cities_df = pd.read_csv(cities)
-    lat = []
-    lon = []
+    cities_df = pd.read_csv(cities_filepath)
+    lat_list, lon_list = [], []
     for row in cities_df.itertuples(index=False):
-        lat.append(str(row[1]))
-        lon.append(str(row[2]))
-    open_meteo_url += f"&latitude={','.join(lat)}&longitude={','.join(lon)}"
+        lat, lon = row[1], row[2]
+        lat_list.append(lat)
+        lon_list.append(lon)
+
+    open_meteo_url += (
+        f"&latitude={','.join(map(str, lat_list))}"
+        f"&longitude={','.join(map(str, lon_list))}"
+    )
 
     json = fetch(open_meteo_url)
     normalized_json = pd.json_normalize(json)
@@ -112,4 +129,5 @@ def fetch_alerts(lat: float, lon: float) -> dict[str, Any]:
     return fetch(NOAA_URL)
 
 if __name__ == "__main__":
-    df = fetch_air_quality()
+    # fetch_all_weather()
+    print(fetch_all_weather())
