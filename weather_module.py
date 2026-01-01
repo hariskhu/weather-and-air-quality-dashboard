@@ -19,7 +19,7 @@ def fetch(url: str) -> dict[str, Any]:
     response.raise_for_status()
     return response.json()
 
-def fetch_weather(lat: float, lon: float) -> pd.DataFrame:
+def fetch_weather(loc: str, lat: float, lon: float) -> pd.DataFrame:
     """
     Requests current weather data from OpenWeather API
     """
@@ -40,7 +40,7 @@ def fetch_weather(lat: float, lon: float) -> pd.DataFrame:
     json = fetch(openweather_url)
     df = pd.json_normalize(json)
     # Unpack weather column dict
-    df = df.assign(**df['current.weather'][0][0]).drop('current.weather', axis=1)
+    df = df.assign(**df['current.weather'][0][0], loc=loc).drop('current.weather', axis=1)
     return df
 
 def fetch_all_weather(cities_filepath: str='cities.csv'):
@@ -51,7 +51,7 @@ def fetch_all_weather(cities_filepath: str='cities.csv'):
     weather_list = []
     cities_df = pd.read_csv(cities_filepath)
     for row in cities_df.itertuples(index=False):
-        lat, lon = row[1], row[2]
+        loc, lat, lon = row
         weather_list.append(fetch_weather(lat, lon))
     
     return pd.concat(weather_list)
@@ -90,7 +90,9 @@ def fetch_all_air_quality(cities_filepath: str='cities.csv') -> pd.DataFrame:
 
     json = fetch(open_meteo_url)
     normalized_json = pd.json_normalize(json)
-    df = pd.DataFrame(normalized_json)
+    cities_df.columns = map(str.lower, cities_df.columns)
+    df = pd.DataFrame(normalized_json).round(1)
+    df = pd.merge(cities_df, df, on=['latitude', 'longitude'], how='left')
     return df
 
 def fetch_alerts(loc: str, lat: float, lon: float) -> pd.DataFrame:
@@ -158,4 +160,6 @@ def fetch_all_alerts(cities_filepath: str='cities.csv'):
 if __name__ == "__main__":
     roanoke = ('Roanoke', 37.3, -80.0)
     # df = fetch_all_alerts()
-    df = fetch_alerts(*roanoke)
+    # df = fetch_alerts(*roanoke)
+
+    df = fetch_all_air_quality()
