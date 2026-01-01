@@ -52,7 +52,7 @@ def fetch_all_weather(cities_filepath: str='cities.csv'):
     cities_df = pd.read_csv(cities_filepath)
     for row in cities_df.itertuples(index=False):
         loc, lat, lon = row
-        weather_list.append(fetch_weather(lat, lon))
+        weather_list.append(fetch_weather(loc, lat, lon))
     
     return pd.concat(weather_list)
 
@@ -162,4 +162,6 @@ if __name__ == "__main__":
     # df = fetch_all_alerts()
     # df = fetch_alerts(*roanoke)
 
-    df = fetch_all_air_quality()
+    df1 = fetch_all_weather()
+    df2 = fetch_all_air_quality()
+    df3 = fetch_all_alerts()
