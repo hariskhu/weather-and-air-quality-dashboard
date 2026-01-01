@@ -93,7 +93,7 @@ def fetch_all_air_quality(cities_filepath: str='cities.csv') -> pd.DataFrame:
     df = pd.DataFrame(normalized_json)
     return df
 
-def fetch_alerts(lat: float, lon: float) -> pd.DataFrame:
+def fetch_alerts(loc: str, lat: float, lon: float) -> pd.DataFrame:
     """
     Requests weather alerts from NOAA
     """
@@ -138,8 +138,8 @@ def fetch_alerts(lat: float, lon: float) -> pd.DataFrame:
         [f["properties"] for f in json["features"]],
         sep="_"
     )
-    print(df.columns, df)
-     # df = pd.concat([df.drop(columns=["properties"]), props], axis=1)
+
+    df = df.assign(Location=loc, Latitude=lat, Longitude=lon)
     return df
 
 def fetch_all_alerts(cities_filepath: str='cities.csv'):
@@ -150,12 +150,12 @@ def fetch_all_alerts(cities_filepath: str='cities.csv'):
     alert_list = []
     cities_df = pd.read_csv(cities_filepath)
     for row in cities_df.itertuples(index=False):
-        lat, lon = row[1], row[2]
-        alert_list.append(fetch_alerts(lat, lon))
+        loc, lat, lon = row
+        alert_list.append(fetch_alerts(loc, lat, lon))
     
     return pd.concat(alert_list)
 
 if __name__ == "__main__":
-    roanoke = (37.3, -80.0)
-    df = fetch_all_alerts()
-    # df = fetch_alerts(*roanoke)
+    roanoke = ('Roanoke', 37.3, -80.0)
+    # df = fetch_all_alerts()
+    df = fetch_alerts(*roanoke)
