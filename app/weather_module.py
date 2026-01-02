@@ -6,6 +6,7 @@ from typing import Any
 
 load_dotenv()
 OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
+CITY_DATA_FILEPATH = os.path.join("..", "data", "cities.csv")
 
 def fetch(url: str) -> dict[str, Any]:
     """
@@ -43,7 +44,7 @@ def fetch_weather(loc: str, lat: float, lon: float) -> pd.DataFrame:
     df = df.assign(**df['current.weather'][0][0], loc=loc).drop('current.weather', axis=1)
     return df
 
-def fetch_all_weather(cities_filepath: str='cities.csv'):
+def fetch_all_weather(cities_filepath: str=CITY_DATA_FILEPATH) -> pd.DataFrame:
     """
     Requests all current weather data from cities
     """
@@ -56,7 +57,7 @@ def fetch_all_weather(cities_filepath: str='cities.csv'):
     
     return pd.concat(weather_list)
 
-def fetch_all_air_quality(cities_filepath: str='cities.csv') -> pd.DataFrame:
+def fetch_all_air_quality(cities_filepath: str=CITY_DATA_FILEPATH) -> pd.DataFrame:
     """
     Requests air quality for all cities from Open-Meteo
     """
@@ -136,15 +137,15 @@ def fetch_alerts(loc: str, lat: float, lon: float) -> pd.DataFrame:
     )
 
     # pull properties up
-    props = pd.json_normalize(
+    df = pd.json_normalize(
         [f["properties"] for f in json["features"]],
         sep="_"
     )
 
-    df = df.assign(Location=loc, Latitude=lat, Longitude=lon)
+    df = props.assign(Location=loc, Latitude=lat, Longitude=lon)
     return df
 
-def fetch_all_alerts(cities_filepath: str='cities.csv'):
+def fetch_all_alerts(cities_filepath: str=CITY_DATA_FILEPATH):
     """
     Requests all currently active alerts from cities
     """
@@ -159,8 +160,8 @@ def fetch_all_alerts(cities_filepath: str='cities.csv'):
 
 if __name__ == "__main__":
     roanoke = ('Roanoke', 37.3, -80.0)
-    # df = fetch_all_alerts()
-    # df = fetch_alerts(*roanoke)
+
+    print("<----- Weather module activated ----->")
 
     df1 = fetch_all_weather()
     df2 = fetch_all_air_quality()

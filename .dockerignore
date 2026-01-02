@@ -45,3 +45,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Scraping not needed within container
+scraping.ipynb
