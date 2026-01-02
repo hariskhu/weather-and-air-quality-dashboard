@@ -1,11 +1,11 @@
 import requests
 import pandas as pd
 import os
-from dotenv import load_dotenv
 from typing import Any
 
-load_dotenv()
 OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
+EMAIL = os.getenv("EMAIL")
+GITHUB = "https://github.com/hariskhu"
 CITY_DATA_FILEPATH = os.path.join("..", "data", "cities.csv")
 
 def fetch(url: str) -> dict[str, Any]:
@@ -14,7 +14,7 @@ def fetch(url: str) -> dict[str, Any]:
     """
     response = requests.get(
         url,
-        headers={"User-Agent": "Mozilla/5.0"},
+        headers={"User-Agent": f"({GITHUB}, {EMAIL})"},
         timeout=10
     )
     response.raise_for_status()

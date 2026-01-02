@@ -2,4 +2,3 @@ beautifulsoup4
 requests
 lxml
 pandas
-python-dotenv
