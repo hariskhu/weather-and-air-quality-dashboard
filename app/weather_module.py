@@ -136,8 +136,8 @@ def fetch_alerts(loc: str, lat: float, lon: float) -> pd.DataFrame:
         sep="_"
     )
 
-    # pull properties up
-    df = pd.json_normalize(
+    # Pull properties up
+    props = pd.json_normalize(
         [f["properties"] for f in json["features"]],
         sep="_"
     )
@@ -145,7 +145,7 @@ def fetch_alerts(loc: str, lat: float, lon: float) -> pd.DataFrame:
     df = props.assign(Location=loc, Latitude=lat, Longitude=lon)
     return df
 
-def fetch_all_alerts(cities_filepath: str=CITY_DATA_FILEPATH):
+def fetch_all_alerts(cities_filepath: str=CITY_DATA_FILEPATH) -> pd.DataFrame:
     """
     Requests all currently active alerts from cities
     """
@@ -163,6 +163,6 @@ if __name__ == "__main__":
 
     print("<----- Weather module activated ----->")
 
-    df1 = fetch_all_weather()
-    df2 = fetch_all_air_quality()
+    # df1 = fetch_all_weather()
+    # df2 = fetch_all_air_quality()
     df3 = fetch_all_alerts()
