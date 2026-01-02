@@ -1,41 +1,41 @@
-Location,Latitude,Longitude
-Virginia Beach,36.8,-76.0
-Chesapeake,36.7,-76.3
-Arlington,38.9,-77.1
-Richmond,37.5,-77.5
-Norfolk,36.9,-76.2
-Newport News,37.1,-76.5
-Alexandria,38.8,-77.1
-Hampton,37.0,-76.3
-Suffolk,36.7,-76.6
-Roanoke,37.3,-80.0
-Portsmouth,36.9,-76.4
-Lynchburg,37.4,-79.2
-Dale City,38.6,-77.4
-Centreville,38.8,-77.4
-Reston,39.0,-77.4
-McLean,38.9,-77.2
-Harrisonburg,38.4,-78.9
-Leesburg,39.1,-77.6
-Tuckahoe,37.6,-77.6
-Ashburn,39.0,-77.5
-Lake Ridge,38.7,-77.3
-Blacksburg,37.2,-80.4
-Charlottesville,38.0,-78.5
-Annandale,38.8,-77.2
-Linton Hall,38.8,-77.6
-Manassas,38.8,-77.5
-Burke,38.8,-77.3
-Danville,36.6,-79.4
-Mechanicsville,37.6,-77.4
-South Riding,38.9,-77.5
-Oakton,38.9,-77.3
-Fair Oaks,38.9,-77.4
-Petersburg,37.2,-77.4
-Short Pump,37.6,-77.6
-Springfield,38.8,-77.2
-Sterling,39.0,-77.4
-Fredericksburg,38.3,-77.5
-Brambleton,39.0,-77.5
-Winchester,39.2,-78.2
-Cave Spring,37.2,-80.0
+Location,Latitude,Longitude,NOAA Forecast Zone
+Virginia Beach,36.8,-76.0,VAZ098
+Chesapeake,36.7,-76.3,VAZ097
+Arlington,38.9,-77.1,VAZ054
+Richmond,37.5,-77.5,VAZ515
+Norfolk,36.9,-76.2,VAZ095
+Newport News,37.1,-76.5,VAZ524
+Alexandria,38.8,-77.1,VAZ053
+Hampton,37.0,-76.3,ANZ632
+Suffolk,36.7,-76.6,VAZ096
+Roanoke,37.3,-80.0,VAZ022
+Portsmouth,36.9,-76.4,ANZ638
+Lynchburg,37.4,-79.2,VAZ045
+Dale City,38.6,-77.4,VAZ527
+Centreville,38.8,-77.4,VAZ053
+Reston,39.0,-77.4,VAZ506
+McLean,38.9,-77.2,VAZ053
+Harrisonburg,38.4,-78.9,VAZ026
+Leesburg,39.1,-77.6,VAZ505
+Tuckahoe,37.6,-77.6,VAZ515
+Ashburn,39.0,-77.5,VAZ506
+Lake Ridge,38.7,-77.3,VAZ527
+Blacksburg,37.2,-80.4,VAZ014
+Charlottesville,38.0,-78.5,VAZ037
+Annandale,38.8,-77.2,VAZ053
+Linton Hall,38.8,-77.6,VAZ526
+Manassas,38.8,-77.5,VAZ527
+Burke,38.8,-77.3,VAZ053
+Danville,36.6,-79.4,VAZ044
+Mechanicsville,37.6,-77.4,VAZ516
+South Riding,38.9,-77.5,VAZ506
+Oakton,38.9,-77.3,VAZ053
+Fair Oaks,38.9,-77.4,VAZ053
+Petersburg,37.2,-77.4,VAZ081
+Short Pump,37.6,-77.6,VAZ515
+Springfield,38.8,-77.2,VAZ053
+Sterling,39.0,-77.4,VAZ506
+Fredericksburg,38.3,-77.5,VAZ056
+Brambleton,39.0,-77.5,VAZ506
+Winchester,39.2,-78.2,VAZ028
+Cave Spring,37.2,-80.0,VAZ022

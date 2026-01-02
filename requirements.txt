@@ -1,4 +1,5 @@
-beautifulsoup4
+# Core dependencies, these must be installed to run the Docker container.
+
+dotenv
 requests
-lxml
 pandas

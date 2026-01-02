@@ -1,0 +1,6 @@
+# Dependencies for web scraping, not required to install with pip if cities.csv has the desired data.
+
+beautifulsoup4
+requests
+lxml
+pandas

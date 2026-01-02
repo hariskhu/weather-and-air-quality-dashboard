@@ -1,7 +1,10 @@
 import requests
 import pandas as pd
 import os
+from dotenv import load_dotenv
 from typing import Any
+
+load_dotenv()
 
 OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 EMAIL = os.getenv("EMAIL")
@@ -52,7 +55,7 @@ def fetch_all_weather(cities_filepath: str=CITY_DATA_FILEPATH) -> pd.DataFrame:
     weather_list = []
     cities_df = pd.read_csv(cities_filepath)
     for row in cities_df.itertuples(index=False):
-        loc, lat, lon = row
+        loc, lat, lon, _ = row
         weather_list.append(fetch_weather(loc, lat, lon))
     
     return pd.concat(weather_list)
@@ -101,9 +104,13 @@ def fetch_alerts(loc: str, lat: float, lon: float) -> pd.DataFrame:
     Requests weather alerts from NOAA
     """
 
+    # FIXME: CHANGE TO TAKE FORECAST ZONE
+
     URGENCY = ",".join([
         "Immediate",
         "Expected",
+        "Future",
+        "Unknown",
     ])
 
     SEVERITY = ",".join([
@@ -129,6 +136,10 @@ def fetch_alerts(loc: str, lat: float, lon: float) -> pd.DataFrame:
     )
     
     json = fetch(NOAA_URL)
+    
+    # debug print
+    print(json)
+
     df = pd.json_normalize(
         json["features"],
         record_path=None,
@@ -153,7 +164,7 @@ def fetch_all_alerts(cities_filepath: str=CITY_DATA_FILEPATH) -> pd.DataFrame:
     alert_list = []
     cities_df = pd.read_csv(cities_filepath)
     for row in cities_df.itertuples(index=False):
-        loc, lat, lon = row
+        loc, lat, lon, _ = row
         alert_list.append(fetch_alerts(loc, lat, lon))
     
     return pd.concat(alert_list)
@@ -163,6 +174,6 @@ if __name__ == "__main__":
 
     print("<----- Weather module activated ----->")
 
-    # df1 = fetch_all_weather()
-    # df2 = fetch_all_air_quality()
-    df3 = fetch_all_alerts()
+    df1 = fetch_all_weather()
+    df2 = fetch_all_air_quality()
+    # df3 = fetch_all_alerts()
