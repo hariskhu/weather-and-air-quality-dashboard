@@ -99,12 +99,12 @@ def fetch_all_air_quality(cities_filepath: str=CITY_DATA_FILEPATH) -> pd.DataFra
     df = pd.merge(cities_df, df, on=['latitude', 'longitude'], how='left')
     return df
 
-def fetch_alerts(loc: str, lat: float, lon: float) -> pd.DataFrame:
+def fetch_alerts(forecast_zone: str) -> pd.DataFrame:
     """
     Requests weather alerts from NOAA
     """
 
-    # FIXME: CHANGE TO TAKE FORECAST ZONE
+    # FIXME: CHANGE TO TAKE FORECAST ZONE. NEED ACTIVE ALERT TO DEBUG.
 
     URGENCY = ",".join([
         "Immediate",
@@ -131,7 +131,7 @@ def fetch_alerts(loc: str, lat: float, lon: float) -> pd.DataFrame:
 
     NOAA_URL = (
         "https://api.weather.gov/alerts/active?"
-        f"point={lat}%2C{lon}"
+        f"zone={forecast_zone}"
         f"&urgency={URGENCY}&severity={SEVERITY}&certainty={CERTAINTY}"
     )
     
@@ -148,12 +148,11 @@ def fetch_alerts(loc: str, lat: float, lon: float) -> pd.DataFrame:
     )
 
     # Pull properties up
-    props = pd.json_normalize(
-        [f["properties"] for f in json["features"]],
-        sep="_"
-    )
+    # df = pd.json_normalize(
+    #     [f["properties"] for f in json["features"]],
+    #     sep="_"
+    # )
 
-    df = props.assign(Location=loc, Latitude=lat, Longitude=lon)
     return df
 
 def fetch_all_alerts(cities_filepath: str=CITY_DATA_FILEPATH) -> pd.DataFrame:
@@ -161,19 +160,24 @@ def fetch_all_alerts(cities_filepath: str=CITY_DATA_FILEPATH) -> pd.DataFrame:
     Requests all currently active alerts from cities
     """
 
+    # FIXME: FIX MERGE
+
     alert_list = []
     cities_df = pd.read_csv(cities_filepath)
-    for row in cities_df.itertuples(index=False):
-        loc, lat, lon, _ = row
-        alert_list.append(fetch_alerts(loc, lat, lon))
+
+    for zone in cities_df['NOAA Forecast Zone'].unique():
+        alert = fetch_alerts(zone)
+        alert_list.append(alert)
+
+    alert_df = pd.concat(alert_list)
+    cities_df.merge(alert_df, how='left', on='NOAA Forecast Zone')
     
-    return pd.concat(alert_list)
+    return alert_df
 
 if __name__ == "__main__":
-    roanoke = ('Roanoke', 37.3, -80.0)
-
     print("<----- Weather module activated ----->")
-
-    df1 = fetch_all_weather()
-    df2 = fetch_all_air_quality()
-    # df3 = fetch_all_alerts()
+    # cities = pd.read_csv(CITY_DATA_FILEPATH)
+    # bro = fetch_alerts(cities.iloc[20]['NOAA Forecast Zone'])
+    # df1 = fetch_all_weather()
+    # df2 = fetch_all_air_quality()
+    df3 = fetch_all_alerts()
