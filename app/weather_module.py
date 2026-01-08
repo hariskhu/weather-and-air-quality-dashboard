@@ -1,6 +1,7 @@
 import requests
 import pandas as pd
 import os
+import time
 from dotenv import load_dotenv
 from typing import Any
 
@@ -11,17 +12,28 @@ EMAIL = os.getenv("EMAIL")
 GITHUB = "https://github.com/hariskhu"
 CITY_DATA_FILEPATH = os.path.join("..", "data", "cities.csv")
 
-def fetch(url: str) -> dict[str, Any]:
+def fetch(url: str, max_retries: int=3) -> dict[str, Any]:
     """
     Makes a GET request to given URL
     """
-    response = requests.get(
-        url,
-        headers={"User-Agent": f"({GITHUB}, {EMAIL})"},
-        timeout=10
-    )
-    response.raise_for_status()
-    return response.json()
+
+    # TODO: ADD METADATA
+
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(
+                url,
+                headers={"User-Agent": f"({GITHUB}, {EMAIL})"},
+                timeout=10
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"Request to {url} failed: {e}")
+            # return metadata
+        
+        if attempt < max_retries - 1:
+            time.sleep(2 ** attempt)
 
 def fetch_weather(loc: str, lat: float, lon: float) -> pd.DataFrame:
     """
