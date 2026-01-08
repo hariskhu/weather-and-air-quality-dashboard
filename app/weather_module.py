@@ -12,7 +12,7 @@ EMAIL = os.getenv("EMAIL")
 GITHUB = "https://github.com/hariskhu"
 CITY_DATA_FILEPATH = os.path.join("..", "data", "cities.csv")
 
-def fetch(url: str, max_retries: int=3) -> dict[str, Any]:
+def fetch(url: str, *, max_retries: int=3) -> dict[str, Any]:
     """
     Makes a GET request to given URL
     """
@@ -23,7 +23,7 @@ def fetch(url: str, max_retries: int=3) -> dict[str, Any]:
         try:
             response = requests.get(
                 url,
-                headers={"User-Agent": f"({GITHUB}, {EMAIL})"},
+                headers={"User-Agent": f"({GITHUB}, {EMAIL})"}, # For NOAA
                 timeout=10
             )
             response.raise_for_status()

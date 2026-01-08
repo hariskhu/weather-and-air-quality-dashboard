@@ -28,7 +28,7 @@ I'm using (or plan on using) a variety of tools as part of this project.
 - Snowflake (and dbt within Snowflake): pulls bronze parquets in, cleans them for the silver layer, then prepares gold layer tables.
 
 ### Dashboard
-- PowerBI: better free tier than Tableau, using for the learning experience
+- Tableau: more flexibile visualizations
 
 ## Progress
 ### Completed
