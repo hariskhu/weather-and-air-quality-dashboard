@@ -15,7 +15,7 @@ EMAIL = os.getenv("EMAIL")
 GITHUB = "https://github.com/hariskhu"
 CITY_DATA_FILEPATH = os.path.join("..", "data", "cities.csv")
 
-
+# TODO: ADD LOGGING
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
