@@ -2,8 +2,11 @@ import requests
 import pandas as pd
 import os
 import time
-from dotenv import load_dotenv
+import logging
+from dataclasses import dataclass, fields
 from typing import Any
+from dotenv import load_dotenv
+
 
 load_dotenv()
 
@@ -12,12 +15,26 @@ EMAIL = os.getenv("EMAIL")
 GITHUB = "https://github.com/hariskhu"
 CITY_DATA_FILEPATH = os.path.join("..", "data", "cities.csv")
 
-def fetch(url: str, *, max_retries: int=3) -> dict[str, Any]:
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+@dataclass
+class FetchResponse:
+    '''
+    DataClass for FetchResponse to retrieve JSON response and metadata
+    '''
+    json: dict[str, Any]
+    attempts: int
+    request_time: float
+
+
+def fetch(url: str, *, max_retries: int=3, api_name: str=None) -> FetchResponse:
     """
-    Makes a GET request to given URL
+    Makes a GET request to given URL, return FetchResponse
     """
 
-    # TODO: ADD METADATA
+    start_time = time.perf_counter()
 
     for attempt in range(max_retries):
         try:
@@ -27,13 +44,18 @@ def fetch(url: str, *, max_retries: int=3) -> dict[str, Any]:
                 timeout=10
             )
             response.raise_for_status()
-            return response.json()
+            break
         except requests.exceptions.RequestException as e:
             print(f"Request to {url} failed: {e}")
-            # return metadata
         
         if attempt < max_retries - 1:
             time.sleep(2 ** attempt)
+        
+    end_time = time.perf_counter()
+    json = response.json()
+    attempts = attempt + 1
+    request_time = end_time - start_time
+    return FetchResponse(json=json, attempts=attempts, request_time=request_time)
 
 def fetch_weather(loc: str, lat: float, lon: float) -> pd.DataFrame:
     """
@@ -53,10 +75,15 @@ def fetch_weather(loc: str, lat: float, lon: float) -> pd.DataFrame:
         f"&appid={OPENWEATHER_API_KEY}"
     )
 
-    json = fetch(openweather_url)
+    fetch_response = fetch(openweather_url)
+    json = fetch_response.json
     df = pd.json_normalize(json)
     # Unpack weather column dict
     df = df.assign(**df['current.weather'][0][0], loc=loc).drop('current.weather', axis=1)
+    for field in fields(fetch_response):
+        if field.name != 'json':
+            value = getattr(fetch_response, field.name)
+            df[field.name] = value
     return df
 
 def fetch_all_weather(cities_filepath: str=CITY_DATA_FILEPATH) -> pd.DataFrame:
@@ -104,19 +131,23 @@ def fetch_all_air_quality(cities_filepath: str=CITY_DATA_FILEPATH) -> pd.DataFra
         f"&longitude={','.join(map(str, lon_list))}"
     )
 
-    json = fetch(open_meteo_url)
+    fetch_response = fetch(open_meteo_url)
+    json = fetch_response.json
     normalized_json = pd.json_normalize(json)
     cities_df.columns = map(str.lower, cities_df.columns)
     df = pd.DataFrame(normalized_json).round(1)
     df = pd.merge(cities_df, df, on=['latitude', 'longitude'], how='left')
+
+    for field in fields(fetch_response):
+        if field.name != 'json':
+            value = getattr(fetch_response, field.name)
+            df[field.name] = value
     return df
 
 def fetch_alerts(forecast_zone: str) -> pd.DataFrame:
     """
     Requests weather alerts from NOAA
     """
-
-    # FIXME: CHANGE TO TAKE FORECAST ZONE. NEED ACTIVE ALERT TO DEBUG.
 
     URGENCY = ",".join([
         "Immediate",
@@ -147,24 +178,20 @@ def fetch_alerts(forecast_zone: str) -> pd.DataFrame:
         f"&urgency={URGENCY}&severity={SEVERITY}&certainty={CERTAINTY}"
     )
     
-    json = fetch(NOAA_URL)
-    
-    # debug print
-    print(json)
+    fetch_response = fetch(NOAA_URL)
+    json = fetch_response.json
 
     df = pd.json_normalize(
-        json["features"],
+        json['features'],
         record_path=None,
         meta=["id"],
         sep="_"
     )
 
-    # Pull properties up
-    # df = pd.json_normalize(
-    #     [f["properties"] for f in json["features"]],
-    #     sep="_"
-    # )
-
+    for field in fields(fetch_response):
+        if field.name != 'json':
+            value = getattr(fetch_response, field.name)
+            df[field.name] = value
     return df
 
 def fetch_all_alerts(cities_filepath: str=CITY_DATA_FILEPATH) -> pd.DataFrame:
@@ -172,24 +199,26 @@ def fetch_all_alerts(cities_filepath: str=CITY_DATA_FILEPATH) -> pd.DataFrame:
     Requests all currently active alerts from cities
     """
 
-    # FIXME: FIX MERGE
-
     alert_list = []
     cities_df = pd.read_csv(cities_filepath)
 
     for zone in cities_df['NOAA Forecast Zone'].unique():
         alert = fetch_alerts(zone)
+        alert['NOAA Forecast Zone'] = zone
         alert_list.append(alert)
 
     alert_df = pd.concat(alert_list)
-    cities_df.merge(alert_df, how='left', on='NOAA Forecast Zone')
+    alert_df.merge(cities_df, how='left', on='NOAA Forecast Zone')
     
     return alert_df
 
-if __name__ == "__main__":
+def main():
     print("<----- Weather module activated ----->")
-    # cities = pd.read_csv(CITY_DATA_FILEPATH)
-    # bro = fetch_alerts(cities.iloc[20]['NOAA Forecast Zone'])
-    # df1 = fetch_all_weather()
-    # df2 = fetch_all_air_quality()
+    df1 = fetch_all_weather()
+    df2 = fetch_all_air_quality()
     df3 = fetch_all_alerts()
+    print(df1, df2, df3, sep='\n')
+    return df1, df2, df3
+
+if __name__ == "__main__":
+    df1, df2, df3 = main()
