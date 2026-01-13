@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import time
 import logging
+from datetime import datetime
 from dataclasses import dataclass, fields
 from typing import Any
 from dotenv import load_dotenv
@@ -13,8 +14,6 @@ OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 EMAIL = os.getenv("EMAIL")
 GITHUB = "https://github.com/hariskhu"
 CITY_DATA_FILEPATH = os.path.join("..", "data", "cities.csv")
-
-# TODO: ADD LOGGING
 
 logging.basicConfig(
     level=logging.INFO,
@@ -32,15 +31,16 @@ class FetchResponse:
     '''
     json: dict[str, Any]
     attempts: int
-    request_time: float
+    request_timestamp: datetime
+    request_duration: float
 
-
-def fetch(url: str, *, max_retries: int=3, api_name: str=None) -> FetchResponse:
+def fetch(url: str, *, max_retries: int=3, api_name: str=None, **kwargs) -> FetchResponse:
     """
     Makes a GET request to given URL, return FetchResponse
     """
+    request_timestamp = datetime.now()
+    start = time.perf_counter()
 
-    start_time = time.perf_counter()
 
     for attempt in range(max_retries):
         try:
@@ -57,17 +57,20 @@ def fetch(url: str, *, max_retries: int=3, api_name: str=None) -> FetchResponse:
         if attempt < max_retries - 1:
             time.sleep(2 ** attempt)
         
-    end_time = time.perf_counter()
+    end = time.perf_counter()
     json = response.json()
     attempts = attempt + 1
-    request_time = end_time - start_time
-    return FetchResponse(json=json, attempts=attempts, request_time=request_time)
+    request_duration = end - start
+
+    params_to_log = ", ".join(f"{k}={v!r}" for k, v in kwargs.items()) if kwargs else "NONE"
+    logger.info(f"Successful fetch() from {api_name if api_name else "UNDEFINED"}"
+                f" in {attempts} tries with parameters {params_to_log}")
+    return FetchResponse(json, attempts, request_timestamp, request_duration)
 
 def fetch_weather(loc: str, lat: float, lon: float) -> pd.DataFrame:
     """
     Requests current weather data from OpenWeather API
     """
-    
     EXCLUDED = ",".join([
         'minutely',
         'hourly',
@@ -81,7 +84,13 @@ def fetch_weather(loc: str, lat: float, lon: float) -> pd.DataFrame:
         f"&appid={OPENWEATHER_API_KEY}"
     )
 
-    fetch_response = fetch(openweather_url)
+    fetch_response = fetch(
+        openweather_url,
+        api_name="OpenWeather",
+        loc=loc,
+        lat=lat,
+        lon=lon,
+    )
     json = fetch_response.json
     df = pd.json_normalize(json)
     # Unpack weather column dict
@@ -96,7 +105,6 @@ def fetch_all_weather(cities_filepath: str=CITY_DATA_FILEPATH) -> pd.DataFrame:
     """
     Requests all current weather data from cities
     """
-
     weather_list = []
     cities_df = pd.read_csv(cities_filepath)
     for row in cities_df.itertuples(index=False):
@@ -109,7 +117,6 @@ def fetch_all_air_quality(cities_filepath: str=CITY_DATA_FILEPATH) -> pd.DataFra
     """
     Requests air quality for all cities from Open-Meteo
     """
-
     CURRENT_PARAMS = ",".join([
         "us_aqi",
         "pm10",
@@ -137,11 +144,10 @@ def fetch_all_air_quality(cities_filepath: str=CITY_DATA_FILEPATH) -> pd.DataFra
         f"&longitude={','.join(map(str, lon_list))}"
     )
 
-    fetch_response = fetch(open_meteo_url)
+    fetch_response = fetch(open_meteo_url, api_name="Open-Meteo")
     json = fetch_response.json
-    normalized_json = pd.json_normalize(json)
+    df = pd.json_normalize(json).round(1)
     cities_df.columns = map(str.lower, cities_df.columns)
-    df = pd.DataFrame(normalized_json).round(1)
     df = pd.merge(cities_df, df, on=['latitude', 'longitude'], how='left')
 
     for field in fields(fetch_response):
@@ -154,14 +160,12 @@ def fetch_alerts(forecast_zone: str) -> pd.DataFrame:
     """
     Requests weather alerts from NOAA
     """
-
     URGENCY = ",".join([
         "Immediate",
         "Expected",
         "Future",
         "Unknown",
     ])
-
     SEVERITY = ",".join([
         "Extreme",
         "Severe",
@@ -169,7 +173,6 @@ def fetch_alerts(forecast_zone: str) -> pd.DataFrame:
         "Minor",
         "Unknown",
     ])
-
     CERTAINTY = ",".join([
         "Observed",
         "Likely",
@@ -177,14 +180,17 @@ def fetch_alerts(forecast_zone: str) -> pd.DataFrame:
         "Unlikely",
         "Unknown",
     ])
-
     NOAA_URL = (
         "https://api.weather.gov/alerts/active?"
         f"zone={forecast_zone}"
         f"&urgency={URGENCY}&severity={SEVERITY}&certainty={CERTAINTY}"
     )
     
-    fetch_response = fetch(NOAA_URL)
+    fetch_response = fetch(
+        NOAA_URL, 
+        api_name="NOAA",
+        forecast_zone=forecast_zone,
+    )
     json = fetch_response.json
 
     df = pd.json_normalize(
@@ -219,7 +225,6 @@ def fetch_all_alerts(cities_filepath: str=CITY_DATA_FILEPATH) -> pd.DataFrame:
     return alert_df
 
 def main():
-
     df1 = fetch_all_weather()
     df2 = fetch_all_air_quality()
     df3 = fetch_all_alerts()
