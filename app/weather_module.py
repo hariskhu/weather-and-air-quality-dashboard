@@ -7,7 +7,6 @@ from dataclasses import dataclass, fields
 from typing import Any
 from dotenv import load_dotenv
 
-
 load_dotenv()
 
 OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
@@ -16,8 +15,15 @@ GITHUB = "https://github.com/hariskhu"
 CITY_DATA_FILEPATH = os.path.join("..", "data", "cities.csv")
 
 # TODO: ADD LOGGING
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='[%(name)s %(levelname)s] %(asctime)s :: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.info('WEATHER MODULE ACTIVATED')
 
 @dataclass
 class FetchResponse:
@@ -213,7 +219,7 @@ def fetch_all_alerts(cities_filepath: str=CITY_DATA_FILEPATH) -> pd.DataFrame:
     return alert_df
 
 def main():
-    print("<----- Weather module activated ----->")
+
     df1 = fetch_all_weather()
     df2 = fetch_all_air_quality()
     df3 = fetch_all_alerts()
