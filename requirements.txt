@@ -1,5 +1,7 @@
 # Core dependencies, these must be installed to run the Docker container.
 
-dotenv
+python-dotenv
 requests
 pandas
+pyarrow
+apache-airflow-providers-amazon
