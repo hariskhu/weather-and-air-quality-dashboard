@@ -237,6 +237,13 @@ def fetch_all_alerts(cities_filepath: str=CITY_DATA_FILEPATH) -> pd.DataFrame:
         logger.warning("fetch_all_alerts() resulted in empty data.")
     return df
 
+def parquet_to_s3(df: pd.DataFrame):
+    """
+    Saves a dataframe to S3 as a parquet
+    """
+    # TODO: IMPLEMENT THIS
+    pass
+
 def main():
     df1 = fetch_all_weather()
     df2 = fetch_all_air_quality()
