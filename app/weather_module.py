@@ -26,23 +26,24 @@ logger.info('WEATHER MODULE ACTIVATED')
 
 @dataclass
 class FetchResponse:
-    '''
+    """
     DataClass for FetchResponse to retrieve JSON response and metadata
-    '''
+    """
     json: dict[str, Any]
     attempts: int
     request_timestamp: datetime
     request_duration: float
 
-def fetch(url: str, *, max_retries: int=3, api_name: str=None, **kwargs) -> FetchResponse:
+def fetch(url: str, *, max_retries: int=4, api_name: str="UNDEFINED", **kwargs) -> FetchResponse:
     """
     Makes a GET request to given URL, return FetchResponse
+    that contains the JSON response and additional metadata
     """
     request_timestamp = datetime.now()
     start = time.perf_counter()
+    params_to_log = ", ".join(f"{k}={v!r}" for k, v in kwargs.items()) if kwargs else "NONE"
 
-
-    for attempt in range(max_retries):
+    for attempt in range(1, max_retries + 1):
         try:
             response = requests.get(
                 url,
@@ -52,20 +53,19 @@ def fetch(url: str, *, max_retries: int=3, api_name: str=None, **kwargs) -> Fetc
             response.raise_for_status()
             break
         except requests.exceptions.RequestException as e:
-            print(f"Request to {url} failed: {e}")
+            logger.warning(f"Error on attempt {attempt}/{max_retries} using fetch().")
         
-        if attempt < max_retries - 1:
+        if attempt < max_retries:
             time.sleep(2 ** attempt)
+        else:
+            logger.error(f"Maximum retries reached when querying {api_name} with parameters {params_to_log}.")
         
     end = time.perf_counter()
     json = response.json()
-    attempts = attempt + 1
     request_duration = end - start
 
-    params_to_log = ", ".join(f"{k}={v!r}" for k, v in kwargs.items()) if kwargs else "NONE"
-    logger.info(f"Successful fetch() from {api_name if api_name else "UNDEFINED"}"
-                f" in {attempts} tries with parameters {params_to_log}")
-    return FetchResponse(json, attempts, request_timestamp, request_duration)
+    logger.info(f"Successful fetch() from {api_name} in {attempt} tries with parameters {params_to_log}.")
+    return FetchResponse(json, attempt, request_timestamp, request_duration)
 
 def fetch_weather(loc: str, lat: float, lon: float) -> pd.DataFrame:
     """
@@ -105,18 +105,26 @@ def fetch_all_weather(cities_filepath: str=CITY_DATA_FILEPATH) -> pd.DataFrame:
     """
     Requests all current weather data from cities
     """
+    logger.info("Begin fetch_all_weather().")
+
     weather_list = []
     cities_df = pd.read_csv(cities_filepath)
     for row in cities_df.itertuples(index=False):
         loc, lat, lon, _ = row
         weather_list.append(fetch_weather(loc, lat, lon))
     
-    return pd.concat(weather_list)
+    df = pd.concat(weather_list, ignore_index=True)
+    logger.info("fetch_all_weather() complete.")
+    if df.empty:
+        logger.warning("fetch_all_weather() resulted in empty data.")
+    return df
 
 def fetch_all_air_quality(cities_filepath: str=CITY_DATA_FILEPATH) -> pd.DataFrame:
     """
     Requests air quality for all cities from Open-Meteo
     """
+    logger.info("Begin fetch_all_air_quality().")
+
     CURRENT_PARAMS = ",".join([
         "us_aqi",
         "pm10",
@@ -126,7 +134,6 @@ def fetch_all_air_quality(cities_filepath: str=CITY_DATA_FILEPATH) -> pd.DataFra
         "sulphur_dioxide",
         "ozone",
     ])
-
     open_meteo_url = (
         "https://air-quality-api.open-meteo.com/v1/air-quality?"
         f"&current={CURRENT_PARAMS}&timezone=America/New_York&timeformat=unixtime"
@@ -138,7 +145,6 @@ def fetch_all_air_quality(cities_filepath: str=CITY_DATA_FILEPATH) -> pd.DataFra
         lat, lon = row[1], row[2]
         lat_list.append(lat)
         lon_list.append(lon)
-
     open_meteo_url += (
         f"&latitude={','.join(map(str, lat_list))}"
         f"&longitude={','.join(map(str, lon_list))}"
@@ -154,6 +160,10 @@ def fetch_all_air_quality(cities_filepath: str=CITY_DATA_FILEPATH) -> pd.DataFra
         if field.name != 'json':
             value = getattr(fetch_response, field.name)
             df[field.name] = value
+
+    logger.info("fetch_all_air_quality() complete.")
+    if df.empty:
+        logger.warning("fetch_all_air_quality() resulted in empty data.")
     return df
 
 def fetch_alerts(forecast_zone: str) -> pd.DataFrame:
@@ -210,19 +220,22 @@ def fetch_all_alerts(cities_filepath: str=CITY_DATA_FILEPATH) -> pd.DataFrame:
     """
     Requests all currently active alerts from cities
     """
+    logger.info("Begin fetch_all_alerts().")
 
     alert_list = []
     cities_df = pd.read_csv(cities_filepath)
-
     for zone in cities_df['NOAA Forecast Zone'].unique():
         alert = fetch_alerts(zone)
         alert['NOAA Forecast Zone'] = zone
         alert_list.append(alert)
 
-    alert_df = pd.concat(alert_list)
-    alert_df.merge(cities_df, how='left', on='NOAA Forecast Zone')
-    
-    return alert_df
+    df = pd.concat(alert_list)
+    df.merge(cities_df, how='left', on='NOAA Forecast Zone')
+
+    logger.info("fetch_all_alerts() complete.")
+    if df.empty:
+        logger.warning("fetch_all_alerts() resulted in empty data.")
+    return df
 
 def main():
     df1 = fetch_all_weather()
