@@ -2,7 +2,7 @@
 ## Project Goal
 The goal of this project is to create a data pipeline that follows medallion data architecture, ingesting data from three main sources:
 - [OpenWeather](https://openweathermap.org/) for weather data
-- [OpenMeteo](https://open-meteo.com/) for air quality data
+- [Open-Meteo](https://open-meteo.com/) for air quality data
 - [National Weather Service](https://www.weather.gov/documentation/services-web-api) for weather alert data
 
 I also scraped data from two websites to get coordinate and population data on VA cities:
