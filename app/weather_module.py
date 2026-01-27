@@ -13,7 +13,7 @@ load_dotenv()
 OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 EMAIL = os.getenv("EMAIL")
 GITHUB = "https://github.com/hariskhu"
-CITY_DATA_FILEPATH = os.path.join("..", "data", "cities.csv")
+CITY_DATA_FILEPATH = os.path.join("..", "data", "cities.csv") # Change to /opt/airflow/data/myfile.csv for container
 
 logging.basicConfig(
     level=logging.INFO,
