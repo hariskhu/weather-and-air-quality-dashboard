@@ -210,4 +210,7 @@ __marimo__/
 log.txt
 
 # Airflow
+airflow.db
+airflow-webserver.pid
 config/
+logs/
