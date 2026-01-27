@@ -208,3 +208,6 @@ __marimo__/
 
 # Log file for testing
 log.txt
+
+# Airflow
+config/
