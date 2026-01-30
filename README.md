@@ -10,7 +10,7 @@ I also scraped data from two websites to get coordinate and population data on V
 - [City Population](https://www.citypopulation.de/en/usa/cities/virginia/) for population data
 
 ## The Stack
-I'm using (or plan on using) a variety of tools as part of this project.
+Originally I wanted to create full dashboard, but for now I'm focusing on completing just the data pipeline first. I'll get data warehousing and a dashboard working at a later date. I also planned on adding CI/CD and Terraform, but using them is a bit excessive for a such a simple project.
 
 ### Scraping
 - Beatiful Soup: web scraping
@@ -19,9 +19,8 @@ I'm using (or plan on using) a variety of tools as part of this project.
 
 ### Data Pipeline
 - Apache Airflow: workflow orchestrator for the entire pipeline
-- Docker Compose: makes deploying the script faster
+- Docker Compose: containerize both the script and Airflow for deployment
 - Amazon EC2: will run the Airflow script so it can work 24/7
-- Terraform: mostly for the learning experience, but also makes it easier to display how S3 and EC2 are set up
 
 #### Bronze Layer
 - Amazon S3: holds parquets from API calls
@@ -36,15 +35,7 @@ I'm using (or plan on using) a variety of tools as part of this project.
 ### Completed
 - Scraping notebook
 - Data collecting functions
-- IAM users and S3 bucket (not with Terraform yet)
-- Data collecting functions are Dockerized (but are just being imported for the Airflow script anyway so it was a little pointless)
+- Airflow and Docker Compose
 
 ### To Do
-- Get weather module to post parquets to write to S3 (ignore schema for now, just make sure it works)
-- Terraform for S3
-- Airflow and Docker Compose
-- Terraform for EC2
-- CD with GitHub Actions
-- Consider paying for OpenWeather to track more cities, rerun the scraping notebook if so
-- Set up Snowflake and connect with Airflow, CD means that minimal data will be lost
-- Create Tableau dashboard and deploy to Tableau Public
+- Get weather module to post parquets to write to S3
